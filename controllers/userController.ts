@@ -174,3 +174,19 @@ export const assign = async (req: Request, res: Response) => {
     return res.status(500).json({ message: 'Server error' });
   }
 };
+
+export const getAllRides = async (req: Request, res: Response) => {
+  const adminid= req.params.adminId;
+  console.log('Fetching rides for adminId:', adminid);
+  try {
+    const rides = await Ride.findById({ adminId: adminid });
+    if (!rides) {
+      return res.status(404).json({ message: 'No rides found for this admin' });
+    }
+
+    res.status(200).json({ rides });
+  } catch (error) {
+    console.error('Error fetching rides:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
