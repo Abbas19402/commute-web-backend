@@ -1,6 +1,7 @@
 
 import type { Request, Response } from 'express';
 import DriverUserAccount from '../models/DriverUserAccount.ts';
+import Ride from '../models/Rides.ts';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
@@ -29,6 +30,7 @@ export const signup = async (req: Request, res: Response) => {
             email,
             phone,
             password: hashedPassword,
+           
         });
 
         await newDriver.save();
@@ -124,4 +126,19 @@ export const logout = (req: Request, res: Response) => {
   });
 
   res.status(200).json({ message: 'Logged out successfully' });
+};
+export const getRide = async (req: Request, res: Response) => {
+  const trackingId = req.params.trackingId;
+  console.log('Fetching rides for trackingId:', trackingId);
+  try {
+    const rides = await Ride.findById({ trackingId });
+    if (!rides) {
+      return res.status(404).json({ message: 'No rides found for this trackingId' });
+    }
+
+    res.status(200).json({ rides });
+  } catch (error) {
+    console.error('Error fetching rides:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
 };
