@@ -3,6 +3,8 @@ import type { Request, Response } from 'express';
 import AdminUser from '../models/AdminUser.ts';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import DriverUser, { DriverRideStatus } from '../models/DriverUserAccount.ts';
+import Ride from '../models/Rides.ts';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key';
 
@@ -118,4 +120,59 @@ export const logout = (req: Request, res: Response) => {
   });
 
   res.status(200).json({ message: 'Logged out successfully' });
+};
+
+
+export const assign = async (req: Request, res: Response) => {
+  try {
+    const {
+      adminId,
+      rideStartAt,
+      rideEndAt,
+      isRideStarted,
+      isRideEnded,
+      date,
+      distance,
+      leg,
+      lastDriverLocation,
+      route
+    } = req.body;
+
+    
+    const availableDriver = await DriverUser.findOneAndUpdate(
+      { status: DriverRideStatus.AVAILABLE },
+      { status: DriverRideStatus.NOT_AVAILABLE },
+      { new: true }
+    );
+
+    if (!availableDriver) {
+      return res.status(404).json({ message: 'No available drivers found' });
+    }
+
+    
+    const newRide = new Ride({
+      adminId,
+      driverId: availableDriver.id, 
+      rideStartAt,
+      rideEndAt,
+      isRideStarted,
+      isRideEnded,
+      date,
+      distance,
+      leg,
+      lastDriverLocation,
+      route
+    });
+
+    await newRide.save(); 
+
+    return res.status(200).json({
+      ride: newRide,
+      message: 'Ride assigned successfully'
+    });
+
+  } catch (error) {
+    console.error('Error assigning driver:', error);
+    return res.status(500).json({ message: 'Server error' });
+  }
 };
