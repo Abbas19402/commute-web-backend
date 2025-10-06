@@ -2,6 +2,7 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IAdminUser extends Document {
+  
   firstName: string;
   lastName: string;
   email: string;
