@@ -140,9 +140,7 @@ export const assign = async (req: Request, res: Response) => {
 
     
     const availableDriver = await DriverUser.findOneAndUpdate(
-      { status: DriverRideStatus.AVAILABLE },
-      { status: DriverRideStatus.NOT_AVAILABLE },
-      { new: true }
+      { status: DriverRideStatus.AVAILABLE }
     );
 
     if (!availableDriver) {
