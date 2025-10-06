@@ -32,7 +32,7 @@ const DriverUserSchema: Schema<IDriverUser> = new Schema(
     status: {
       type: String,
       enum: Object.values(DriverRideStatus),
-      default: DriverRideStatus.NOT_AVAILABLE
+      default: DriverRideStatus.AVAILABLE
     },
     currentLoc: {
       lat: { type: Number, default: 0.0 },
