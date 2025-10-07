@@ -4,6 +4,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import userRoutes from './routes/userRoutes.ts';
 import driverRoutes from './routes/driverRoutes.ts';
+import Ride from './models/Rides.ts';
 import cookieParser from 'cookie-parser';
 import nodemailer from 'nodemailer';
 import http from 'http';
@@ -82,28 +83,35 @@ io.on('connection', (socket) => {
     
     const list = Array.from(pendingChats.entries()).map(([userId, val]) => ({
       userId,
-      userName: val.userName || userId
+      userName: val.userName || userId,
+      trackingId: val.trackingId
     }));
     socket.emit('pendingList', list);
   });
 
   
-  socket.on('chatRequest', ({ userId, userName } = {}) => {
+  socket.on('chatRequest', async ({ userId, userName, trackingId } = {}) => {
     console.log('Chat request from', userId, userName);
-    pendingChats.set(userId, { socketId: socket.id, userName: userName || userId });
+    pendingChats.set(userId, { socketId: socket.id, userName: userName || userId, trackingId });
+    
+     // trackingId corresponds to Ride._id
+    const ride = await Ride.findById(trackingId);
+    if (!ride) return;
 
-   
-    io.sockets.sockets.forEach((s) => {
-      if (s.data && s.data.isAdmin) {
-        s.emit('newChatRequest', { userId, userName: userName || userId });
+    // Find which admin(s) are linked to this ride
+    const targetAdminId = String(ride.adminId);
+
+   io.sockets.sockets.forEach((s) => {
+      if (s.data?.isAdmin && s.data.adminId === targetAdminId) {
+        s.emit('newChatRequest', { userId, userName: userName || userId, trackingId });
       }
     });
 
     socket.emit('waitingForAdmin');
   });
 
-  
-  socket.on('acceptChat', ({ userId, adminId, adminName } = {}) => {
+
+  socket.on('acceptChat', ({ userId, adminId, adminName, trackingId } = {}) => {
     const pending = pendingChats.get(userId);
     if (!pending) {
       socket.emit('acceptFailed', { reason: 'Request not available (maybe already accepted).' });
@@ -119,6 +127,7 @@ io.on('connection', (socket) => {
       io.sockets.sockets.forEach((s) => {
         if (s.data && s.data.isAdmin) s.emit('removePending', { userId });
       });
+      
       return;
     }
 
@@ -128,7 +137,7 @@ io.on('connection', (socket) => {
 
     socket.join(roomId);
     userSocket.join(roomId);
-
+console.log('tracking id' , trackingId  );
     
     io.to(roomId).emit('chatStarted', {
       roomId,

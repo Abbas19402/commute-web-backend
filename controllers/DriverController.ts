@@ -131,7 +131,7 @@ export const getRide = async (req: Request, res: Response) => {
   const trackingId = req.params.trackingId;
   console.log('Fetching rides for trackingId:', trackingId);
   try {
-    const rides = await Ride.findById({ trackingId });
+    const rides = await Ride.findById({ _id: trackingId });
     if (!rides) {
       return res.status(404).json({ message: 'No rides found for this trackingId' });
     }
