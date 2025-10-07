@@ -92,17 +92,22 @@ io.on('connection', (socket) => {
   
   socket.on('chatRequest', async ({ userId, userName, trackingId } = {}) => {
     console.log('Chat request from', userId, userName);
+    trackingId.trim()
     pendingChats.set(userId, { socketId: socket.id, userName: userName || userId, trackingId });
-    
+    console.log('trackingId:', trackingId);
      // trackingId corresponds to Ride._id
     const ride = await Ride.findById(trackingId);
-    if (!ride) return;
+    console.log('Looking for ride with ID:', trackingId);
+
+    console.log('Ride found:', ride);
 
     // Find which admin(s) are linked to this ride
     const targetAdminId = String(ride.adminId);
+    console.log('Target admin ID:', targetAdminId);
 
-   io.sockets.sockets.forEach((s) => {
+   io.sockets.sockets.forEach((s) => { 
       if (s.data?.isAdmin && s.data.adminId === targetAdminId) {
+        console.log('Found matching admin socket:', s.id);
         s.emit('newChatRequest', { userId, userName: userName || userId, trackingId });
       }
     });
@@ -111,7 +116,7 @@ io.on('connection', (socket) => {
   });
 
 
-  socket.on('acceptChat', ({ userId, adminId, adminName, trackingId } = {}) => {
+  socket.on('acceptChat', ({ userId, adminId, adminName } = {}) => {
     const pending = pendingChats.get(userId);
     if (!pending) {
       socket.emit('acceptFailed', { reason: 'Request not available (maybe already accepted).' });
@@ -137,7 +142,7 @@ io.on('connection', (socket) => {
 
     socket.join(roomId);
     userSocket.join(roomId);
-console.log('tracking id' , trackingId  );
+
     
     io.to(roomId).emit('chatStarted', {
       roomId,
